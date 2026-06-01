@@ -1,0 +1,447 @@
+openapi: 3.0.3
+info:
+  title: ProyectoDemoSpring API
+  description: |
+    API REST de demostración con Spring Boot 4.0.1 y SQLite.
+    
+    Esta API proporciona endpoints para:
+    - **Autenticación**: Login con JWT token-based authentication
+    - **Gestión de Usuarios**: CRUD completo con autenticación
+    - **Saludos**: Endpoints de ejemplo simples
+    
+    ### Características de Seguridad
+    - Autenticación Bearer JWT con expiración de 15 minutos
+    - Todos los endpoints protegidos requieren token válido
+    - Documentación pública accesible en `/swagger-ui.html`
+    
+    ### Base de datos
+    - SQLite con Hibernate dialect
+    - DDL Auto: `update` (esquema auto-actualizado)
+    - Ubicación: `./data/mydatabase.db`
+  version: 1.0.0
+  contact:
+    name: ProyectoDemoSpring Support
+  license:
+    name: MIT
+
+servers:
+  - url: http://localhost:9080
+    description: Servidor de desarrollo local
+    variables:
+      basePath:
+        default: /api/v1
+  - url: http://localhost:9080/api/v1
+    description: API Base URL
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Token JWT obtenido del endpoint `/auth/login`.
+        
+        Pasos:
+        1. POST /auth/login con username y password
+        2. Copiar el token de la respuesta
+        3. Incluir en Authorization header: Bearer <token>
+        
+        Token válido por 15 minutos.
+
+  schemas:
+    LoginRequest:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+          example: user
+          description: Nombre de usuario para autenticación
+        password:
+          type: string
+          format: password
+          example: password
+          description: Contraseña del usuario (demo usa "password")
+      description: Modelo de solicitud para login
+
+    JwtResponse:
+      type: object
+      required:
+        - token
+      properties:
+        token:
+          type: string
+          example: eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1c2VyIiwiaWF0IjoxNjMzMDI0ODAwLCJleHAiOjE2MzMwMjU3MDB9.signature
+          description: Token JWT válido por 15 minutos
+      description: Respuesta con token JWT tras login exitoso
+
+    HelloMessage:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          example: Hello, World!
+          description: Mensaje de saludo
+      description: Modelo simple de mensaje de saludo
+
+    UserDto:
+      type: object
+      required:
+        - firstName
+        - lastName
+        - email
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440000
+          description: ID único del usuario (UUID)
+          readOnly: true
+        firstName:
+          type: string
+          example: Juan
+          description: Nombre del usuario
+        lastName:
+          type: string
+          example: Pérez
+          description: Apellido del usuario
+        email:
+          type: string
+          format: email
+          example: juan.perez@example.com
+          description: Correo electrónico del usuario
+        birthDate:
+          type: string
+          format: date
+          example: 1990-05-15
+          description: Fecha de nacimiento del usuario
+        createdAt:
+          type: string
+          format: date-time
+          example: 2024-05-01T10:30:00Z
+          description: Fecha y hora de creación
+          readOnly: true
+        updatedAt:
+          type: string
+          format: date-time
+          example: 2024-05-01T10:30:00Z
+          description: Fecha y hora de última actualización
+          readOnly: true
+      description: Modelo de datos de usuario con UUID como identificador
+
+    ErrorResponse:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        status:
+          type: integer
+        error:
+          type: string
+        message:
+          type: string
+        path:
+          type: string
+      description: Respuesta de error estándar
+
+  responses:
+    UnauthorizedError:
+      description: Token JWT inválido, expirado o no proporcionado
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    ForbiddenError:
+      description: Acceso prohibido al recurso
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFoundError:
+      description: Recurso no encontrado
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+security:
+  - bearerAuth: []
+
+paths:
+  /auth/login:
+    post:
+      tags:
+        - Auth Controller
+      summary: Login de usuario
+      description: |
+        Autentica un usuario y devuelve un token JWT válido por 15 minutos.
+        
+        Credenciales de demostración:
+        - Username: cualquier valor
+        - Password: "password"
+        
+        Este endpoint es público y no requiere autenticación previa.
+      operationId: login
+      requestBody:
+        description: Credenciales de login
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            example:
+              username: user
+              password: password
+      responses:
+        '200':
+          description: Login exitoso - Token JWT generado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JwtResponse'
+              example:
+                token: eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1c2VyIiwiaWF0IjoxNjMzMDI0ODAwLCJleHAiOjE2MzMwMjU3MDB9.signature
+        '401':
+          description: Contraseña incorrecta
+          content:
+            application/json:
+              example:
+                message: Incorrect password
+      security: []
+
+  /api/v1/users:
+    post:
+      tags:
+        - User Controller
+      summary: Crear un nuevo usuario
+      description: Crea un nuevo usuario en el sistema. Requiere autenticación Bearer JWT.
+      operationId: createUser
+      requestBody:
+        description: Datos del nuevo usuario
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserDto'
+            example:
+              firstName: Juan
+              lastName: Pérez
+              email: juan.perez@example.com
+              birthDate: 1990-05-15
+      responses:
+        '200':
+          description: Usuario creado correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDto'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+      security:
+        - bearerAuth: []
+
+    get:
+      tags:
+        - User Controller
+      summary: Obtener todos los usuarios
+      description: Devuelve una lista de todos los usuarios registrados. Requiere autenticación Bearer JWT.
+      operationId: findAllUsers
+      responses:
+        '200':
+          description: Lista de usuarios devuelta correctamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserDto'
+              example:
+                - id: 550e8400-e29b-41d4-a716-446655440000
+                  firstName: Juan
+                  lastName: Pérez
+                  email: juan.perez@example.com
+                  birthDate: 1990-05-15
+                  createdAt: 2024-05-01T10:30:00
+                  updatedAt: 2024-05-01T10:30:00
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+      security:
+        - bearerAuth: []
+
+    delete:
+      tags:
+        - User Controller
+      summary: Eliminar todos los usuarios
+      description: Elimina todos los usuarios del sistema. Requiere autenticación Bearer JWT.
+      operationId: deleteAllUsers
+      responses:
+        '200':
+          description: Todos los usuarios eliminados correctamente
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+      security:
+        - bearerAuth: []
+
+  /api/v1/users/{id}:
+    get:
+      tags:
+        - User Controller
+      summary: Obtener un usuario por ID
+      description: Devuelve un usuario específico por su UUID. Requiere autenticación Bearer JWT.
+      operationId: findUserById
+      parameters:
+        - name: id
+          in: path
+          description: UUID único del usuario
+          required: true
+          schema:
+            type: string
+            format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440000
+      responses:
+        '200':
+          description: Usuario devuelto correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDto'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+      security:
+        - bearerAuth: []
+
+    put:
+      tags:
+        - User Controller
+      summary: Actualizar un usuario
+      description: Actualiza los datos de un usuario existente. Requiere autenticación Bearer JWT.
+      operationId: updateUser
+      parameters:
+        - name: id
+          in: path
+          description: UUID único del usuario a actualizar
+          required: true
+          schema:
+            type: string
+            format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440000
+      requestBody:
+        description: Nuevos datos del usuario
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserDto'
+      responses:
+        '200':
+          description: Usuario actualizado correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDto'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+      security:
+        - bearerAuth: []
+
+    delete:
+      tags:
+        - User Controller
+      summary: Eliminar un usuario
+      description: Elimina un usuario específico por su UUID. Requiere autenticación Bearer JWT.
+      operationId: deleteUser
+      parameters:
+        - name: id
+          in: path
+          description: UUID único del usuario a eliminar
+          required: true
+          schema:
+            type: string
+            format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440000
+      responses:
+        '200':
+          description: Usuario eliminado correctamente
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+      security:
+        - bearerAuth: []
+
+  /api/v1/hello:
+    get:
+      tags:
+        - Hello Controller
+      summary: Endpoint de saludo
+      description: Devuelve un saludo simple "Hello, World!". Devuelve un ejemplo de endpoint protegido.
+      operationId: hello
+      responses:
+        '200':
+          description: Saludo devuelto correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HelloMessage'
+              example:
+                message: Hello, World!
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+      security:
+        - bearerAuth: []
+
+  /api/v1/hello/{name}:
+    get:
+      tags:
+        - Hello Controller
+      summary: Saludo personalizado
+      description: Devuelve un saludo personalizado usando el parámetro de ruta name.
+      operationId: helloWithName
+      parameters:
+        - name: name
+          in: path
+          description: Nombre para el saludo personalizado
+          required: true
+          schema:
+            type: string
+          example: Ana
+      responses:
+        '200':
+          description: Respuesta exitosa con el saludo personalizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HelloMessage'
+              example:
+                message: Hello, Ana!
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+      security:
+        - bearerAuth: []
+
+tags:
+  - name: Auth Controller
+    description: Controlador para autenticación y generación de tokens JWT. Endpoints públicos sin requerir autenticación previa.
+  - name: User Controller
+    description: Controlador para gestionar usuarios. Todos los endpoints requieren autenticación Bearer JWT.
+  - name: Hello Controller
+    description: Controlador para saludos. Endpoints de ejemplo protegidos con autenticación Bearer JWT.
+
+externalDocs:
+  description: Documentación completa del proyecto
+  url: https://github.com/
+
+x-logo:
+  url: https://springio.net/wp-content/uploads/2016/04/spring-boot-project-logo.png
+  altText: Spring Boot Logo
+
