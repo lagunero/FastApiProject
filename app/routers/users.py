@@ -7,6 +7,7 @@ from app.models import User
 from app.schemas import UserDto
 from app.utils.auth import verify_token
 from typing import Optional
+import logging as log
 
 router = APIRouter(tags=["User Controller"])
 
@@ -100,7 +101,7 @@ def find_user_by_id(user_id: str, current_user = Depends(get_current_user)):
     try:
         user_uuid = uuid.UUID(user_id)
         user = db.query(User).filter(User.id == user_uuid.bytes).first()
-        
+        log.log(log.INFO, f"User with id {user_id} found")
         if not user:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,

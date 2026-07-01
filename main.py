@@ -39,7 +39,7 @@ def root():
     return {"message": "Welcome to FastAPI CRUD Application"}
 
 
-def run(host: str = "0.0.0.0", port: int = 9080):
+def run(host: str = "127.0.0.1", port: int = 9080):
     """Start the uvicorn server (exposed for project scripts).
 
     Use as entry point: `main:run` from pyproject scripts.

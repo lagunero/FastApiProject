@@ -114,25 +114,25 @@ Snippets útiles
   print(token)
   ```
 
-+Automatización y comandos rápidos
-+
-+1) Instalar el paquete en modo editable y exponer scripts (recomendado para desarrolladores):
-+
-+```powershell
-+python -m pip install -e .
-+# Luego estarán disponibles los comandos:
-+# fp-start    -> inicia el servidor (equivalente a `python main.py`)
-+# fp-test-api -> ejecuta la suite de integración (equivalente a `python test_api.py`)
-+# fp-init-db  -> fuerza la inicialización de la base de datos desde `init.sql`
-+```
-+
-+2) Alternativa sin instalar: usar los módulos directamente
-+
-+```powershell
-+python main.py           # inicia el servidor (uvicorn)
-+python -m test_api       # ejecuta las pruebas de integración
-+python -c "from app.database import init_db; init_db()"  # inicializa la BD
-+```
-+
-+Colección Postman
-+- Archivo: `postman_collection.json` (raíz del proyecto). Importarlo en Postman y usar la variable `baseUrl` (por defecto http://localhost:9080) y `token` para Authorization.
+Automatización y comandos rápidos
+
+1) Instalar el paquete en modo editable y exponer scripts (recomendado para desarrolladores):
+
+```powershell
+python -m pip install -e .
+# Luego estarán disponibles los comandos:
+# fp-start    -> inicia el servidor (equivalente a `python main.py`)
+# fp-test-api -> ejecuta la suite de integración (equivalente a `python test_api.py`)
+# fp-init-db  -> fuerza la inicialización de la base de datos desde `init.sql`
+```
+
+2) Alternativa sin instalar: usar los módulos directamente
+
+```powershell
+python main.py           # inicia el servidor (uvicorn)
+python -m test_api       # ejecuta las pruebas de integración
+python -c "from app.database import init_db; init_db()"  # inicializa la BD
+```
+
+Colección Postman
+- Archivo: `postman_collection.json` (raíz del proyecto). Importarlo en Postman y usar la variable `baseUrl` (por defecto http://localhost:9080) y `token` para Authorization.
