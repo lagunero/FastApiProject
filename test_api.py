@@ -6,7 +6,7 @@ BASE_URL = "http://localhost:9080"
 
 def test_login():
     print("\n1. Testing login endpoint...")
-    response = requests.post(f"{BASE_URL}/auth/login", json={"username": "user", "password": "password"})
+    response = requests.post(f"{BASE_URL}/auth/login", json={"username": "admin", "password": "admin"})
     print(f"   Status: {response.status_code}")
     print(f"   Response: {response.json()}")
     if response.status_code == 200:
@@ -48,6 +48,9 @@ def test_create_user(token):
     print("\n5. Testing POST /api/v1/users endpoint...")
     headers = {"Authorization": f"Bearer {token}"}
     new_user = {
+        "userName": "testuser",
+        "password": "testpassword",
+        "role": "USER",
         "firstName": "TestUser",
         "lastName": "TestLast",
         "email": "test@example.com",
@@ -86,7 +89,7 @@ def test_delete_user(token, user_id):
     headers = {"Authorization": f"Bearer {token}"}
     response = requests.delete(f"{BASE_URL}/api/v1/users/{user_id}", headers=headers)
     print(f"   Status: {response.status_code}")
-    print(f"   Response: {response.json()}")
+    print(f"   Response: {response.text}")
 
 def test_unauthorized():
     print("\n9. Testing unauthorized access (no token)...")

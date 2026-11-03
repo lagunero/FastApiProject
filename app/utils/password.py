@@ -2,7 +2,7 @@ from app.database import SessionLocal
 from app.models import User
 
 DEMO_CREDENTIALS = {
-    "user": "admin",
+    "user": "user",
     "admin": "admin",
 }
 
@@ -13,4 +13,4 @@ def verify_credentials(username: str, password: str) -> bool:
         user = db.query(User).filter(User.user_name == username).first()
     finally:
         db.close()
-    return user.password == password
+    return user is not None and user.password == password
