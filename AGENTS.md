@@ -11,12 +11,13 @@ Puntos clave para un agente de programación (acción inmediata)
 1) Arquitectura general
 - Proyecto FastAPI modular: entrada en `main.py` que registra 3 routers: `auth`, `users`, `hello`.
 - Base de datos: SQLite en `data/mydatabase.db` creada por `app/database.py::init_db()` usando `init.sql` si el archivo no existe.
+- `main.py` ejecuta `init_db()` inmediatamente al importar la app, antes de incluir los routers.
 - ORM: SQLAlchemy clásico con `declarative_base()` en `app/models.py`. El `User.id` se guarda como LargeBinary (UUID.bytes).
 
 2) Autenticación y autorización
 - JWT: utilidades en `app/utils/auth.py` — algoritmo HS256, `SECRET_KEY` en `app/config.py`, expiración por defecto 15 minutos.
 - Login: `POST /auth/login` en `app/routers/auth.py` crea token vía `create_access_token`.
-- Credenciales demo: `app/utils/password.py` contiene `DEMO_CREDENTIALS` ("user"/"admin" con password "password").
+- Credenciales demo: `app/utils/password.py` contiene `DEMO_CREDENTIALS` con `"user": "user"` y `"admin": "admin"` (no `password` como valor literal).
 - Patrón: los endpoints protegidos obtienen header `Authorization: Bearer <token>` y llaman `verify_token(token)` que devuelve {"username": ...} o None.
 - En el código actual, `app/routers/hello.py` no exige `Authorization`: `/api/v1/hello` y `/api/v1/hello/{name}` son públicos. El guardado de autenticación se aplica a `app/routers/users.py`.
 - `app/routers/auth.py` responde con `PlainTextResponse` en credenciales inválidas (`401`), no con un JSON estándar; si cambias ese comportamiento, también debes ajustar la documentación del contrato.
@@ -43,6 +44,9 @@ Puntos clave para un agente de programación (acción inmediata)
   - o ejecutar `python main.py` (el script llama a uvicorn en __main__).
 - Ejecutar pruebas integradas de ejemplo (requiere servidor corriendo):
   - python test_api.py
+- Ejecutar pruebas unitarias locales con TestClient (sin arrancar el servidor):
+  - python -m unittest tests.test_app
+- El arranque expuesto por `main.py::run()` usa `host="127.0.0.1"` y `port=9080` por defecto; si cambias el host/puerto, sincroniza la documentación y los tests.
 
 7) Variables de entorno y configuración
 - `app/config.py` define `SECRET_KEY`, `ALGORITHM` (HS256) y `ACCESS_TOKEN_EXPIRE_MINUTES` (15). Cambiar `SECRET_KEY` en producción.
@@ -55,6 +59,7 @@ Puntos clave para un agente de programación (acción inmediata)
 9) Puntos de fricción y riesgos conocidos
 - Credenciales demo y contraseñas en texto plano (`init.sql` y `app/utils/password.py`) — cambiar con cuidado si se añaden pruebas de seguridad.
 - Algunas funciones (p. ej. `get_db`) existen pero no se usan en todos los routers; al refactorizar, prefiera injectar dependencias con `Depends(get_db)` para consistencia.
+- El proyecto tiene una suite de pruebas unitaria con `TestClient` en `tests/test_app.py`; al modificar endpoints o payloads, actualiza también los assertions para no romper la validación local.
 
 Archivos clave (rápida referencia)
 - `main.py` — arranque y routers
@@ -65,6 +70,7 @@ Archivos clave (rápida referencia)
 - `app/utils/*` — auth helpers y credenciales demo
 - `openapi.yaml` — contrato completo y ejemplos
 - `test_api.py` — suite de integración orientativa
+- `tests/test_app.py` — suite unitaria local con `TestClient`
 
 Si necesitas modificar o agregar endpoints: inspecciona `openapi.yaml` para ejemplos de payload/response y mantén la convención camelCase en las respuestas JSON.
 
