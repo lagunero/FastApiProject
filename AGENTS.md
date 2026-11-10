@@ -18,6 +18,8 @@ Puntos clave para un agente de programación (acción inmediata)
 - Login: `POST /auth/login` en `app/routers/auth.py` crea token vía `create_access_token`.
 - Credenciales demo: `app/utils/password.py` contiene `DEMO_CREDENTIALS` ("user"/"admin" con password "password").
 - Patrón: los endpoints protegidos obtienen header `Authorization: Bearer <token>` y llaman `verify_token(token)` que devuelve {"username": ...} o None.
+- En el código actual, `app/routers/hello.py` no exige `Authorization`: `/api/v1/hello` y `/api/v1/hello/{name}` son públicos. El guardado de autenticación se aplica a `app/routers/users.py`.
+- `app/routers/auth.py` responde con `PlainTextResponse` en credenciales inválidas (`401`), no con un JSON estándar; si cambias ese comportamiento, también debes ajustar la documentación del contrato.
 
 3) Patrones de datos y conversiones específicas del proyecto
 - UUIDs: se almacenan como bytes en DB. Conversión usada en `app/routers/users.py`:
@@ -25,6 +27,8 @@ Puntos clave para un agente de programación (acción inmediata)
   - escritura: UUID generada con `uuid.uuid4().bytes` en la entidad SQLAlchemy.
 - DTOs: `app/schemas.py::UserDto` usa alias de Pydantic (camelCase en la API, snake_case en el modelo) y `model_config = ConfigDict(populate_by_name=True)`.
   - Ejemplo: `firstName` es alias de `first_name`.
+- En `main.py` hay un manejador global de `HTTPException` que devuelve `{timestamp, status, error, message, path}`; los errores no autenticados o de validación seguirán ese formato si no se sobrescribe explícitamente en un router.
+- Las rutas de usuarios convierten modelos a diccionarios con `user_dto_to_dict()` antes de devolver respuestas para mantener `camelCase` sin depender del alias por defecto de FastAPI.
 
 4) Acceso a DB y patrones de sesión
 - `app/database.py` exporta `SessionLocal` (sessionmaker). Los routers usan `db = SessionLocal()` y siempre cierran con `finally: db.close()` (no usan la dependencia FastAPI `Depends(get_db)` aunque `get_db()` existe).
