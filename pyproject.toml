@@ -9,6 +9,7 @@ dependencies = [
     "pydantic-settings==2.16.2",
     "python-jose[cryptography]==3.5.0",
     "sqlalchemy==2.1.6",
+    "httpx==0.28.1",
 ]
 
 # PEP 621: expose simple console entry points for common tasks
@@ -16,4 +17,7 @@ dependencies = [
 fp-start = "main:run"
 fp-test-api = "test_api:run_tests"
 fp-init-db = "app.database:init_db"
+
+[tool.setuptools]
+packages = ["app", "app.routers", "app.utils"]
 
